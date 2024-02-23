@@ -58,8 +58,10 @@ func main() {
 			fmt.Fprintf(os.Stderr, "parse: %v\n", err)
 		}
 
-		for _, link := range getHref(links, doc) {
-			fmt.Println(link)
+		for ind, link := range getHref(links, doc) {
+			//
+			v := fmt.Sprintf("\033[33m[+] \033[35m%v \033[32m%s\033[0m", ind, link)
+			fmt.Println(v)
 		}
 	}
 }
