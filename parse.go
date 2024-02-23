@@ -2,13 +2,15 @@ package main
 
 import (
 	"fmt"
+	"io/ioutil"
 	"net/http"
 	"os"
+	"strings"
 
 	"golang.org/x/net/html"
 )
 
-func visit(links []string, n *html.Node) []string {
+func getHref(links []string, n *html.Node) []string {
 	if n.Type == html.ElementNode && n.Data == "a" {
 		for _, a := range n.Attr {
 			if a.Key == "href" {
@@ -18,40 +20,45 @@ func visit(links []string, n *html.Node) []string {
 	}
 
 	for c := n.FirstChild; c != nil; c = c.NextSibling {
-		links = visit(links, c)
+		links = getHref(links, c)
 	}
 
 	return links
 }
 
-func getLinks(url string) ([]string, error) {
-	resp, err := http.Get(url)
+func getHtmlPage(webPage string) (string, error) {
+
+	resp, err := http.Get(webPage)
 	if err != nil {
-		return nil, err
+		return "", err
 	}
 
-	if resp.StatusCode != http.StatusOK {
-		resp.Body.Close()
-		return nil, fmt.Errorf("getting %s: %s", url, resp.Status)
-	}
+	defer resp.Body.Close()
+	body, err := ioutil.ReadAll(resp.Body)
 
-	doc, err := html.Parse(resp.Body)
-	resp.Body.Close()
 	if err != nil {
-		return nil, fmt.Errorf("parsing %s as HTML: %v", url, err)
+		return "", err
 	}
 
-	return visit(nil, doc), nil
+	return string(body), nil
 }
 
 func main() {
+	var links []string
 	for _, url := range os.Args[1:] {
-		links, err := getLinks(url)
+		// get string html
+		date, err := getHtmlPage(url)
 		if err != nil {
 			fmt.Fprintf(os.Stderr, "parse: %v\n", err)
 		}
 
-		for _, link := range links {
+		// fmt.Println(date)
+		doc, err := html.Parse(strings.NewReader(date))
+		if err != nil {
+			fmt.Fprintf(os.Stderr, "parse: %v\n", err)
+		}
+
+		for _, link := range getHref(links, doc) {
 			fmt.Println(link)
 		}
 	}
