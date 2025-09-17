@@ -39,28 +39,22 @@ func GetEpisode(a *goquery.Selection) (Episode, error) {
 		return Episode{}, errors.New("not episode")
 	}
 
-	var Season int
-	var Series int
 	episodeArr := strings.Split(epi, " ")
-	if len(episodeArr[0]) != 0 {
-		season, err := strconv.Atoi(episodeArr[0])
-		if err != nil {
-			return Episode{}, errors.New("not season")
-		}
-
-		Season = season
+	if len(episodeArr[0]) == 0 || len(episodeArr[2]) == 0 {
+		return Episode{}, errors.New("not season, series")
 	}
 
-	if len(episodeArr[2]) != 0 {
-		series, err := strconv.Atoi(episodeArr[2])
-		if err != nil {
-			return Episode{}, errors.New("not series")
-		}
-
-		Series = series
+	season, err := strconv.Atoi(episodeArr[0])
+	if err != nil {
+		return Episode{}, errors.New("not season")
 	}
 
-	return Episode{Season: Season, Series: Series}, nil
+	series, err := strconv.Atoi(episodeArr[2])
+	if err != nil {
+		return Episode{}, errors.New("not series")
+	}
+
+	return Episode{Season: season, Series: series}, nil
 }
 
 func GetRating(a *goquery.Selection) Rating {
