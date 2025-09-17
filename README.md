@@ -1,5 +1,7 @@
-# return ref from parse html
+# 🐙 simple parse LordSerial
 
 ```
-go run parse.go https://you_site.url https://you_site2.url
+go mod init
+go mod tidy
+go run .
 ```
