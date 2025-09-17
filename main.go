@@ -12,11 +12,16 @@ import (
 )
 
 type ItemParse struct {
-	Title   string `json:"title"`
-	Href    string `json:"href"`
-	Img     string `json:"img"`
-	Episode string `json:"episode"`
-	Rating  Rating `json:"rating"`
+	Title   string  `json:"title"`
+	Href    string  `json:"href"`
+	Img     string  `json:"img"`
+	Episode Episode `json:"episode"`
+	Rating  Rating  `json:"rating"`
+}
+
+type Episode struct {
+	Season int `json:"season"`
+	Series int `json:"series"`
 }
 
 type Rating struct {
@@ -25,6 +30,38 @@ type Rating struct {
 }
 
 var Items []ItemParse
+
+// 1 сезон 10 серия
+func GetEpisode(a *goquery.Selection) (Episode, error) {
+	episode := a.Find("div.th-series").Text()
+	epi := strings.TrimSpace(episode)
+	if epi == "" {
+		return Episode{}, errors.New("not episode")
+	}
+
+	var Season int
+	var Series int
+	episodeArr := strings.Split(epi, " ")
+	if len(episodeArr[0]) != 0 {
+		season, err := strconv.Atoi(episodeArr[0])
+		if err != nil {
+			return Episode{}, errors.New("not season")
+		}
+
+		Season = season
+	}
+
+	if len(episodeArr[2]) != 0 {
+		series, err := strconv.Atoi(episodeArr[2])
+		if err != nil {
+			return Episode{}, errors.New("not series")
+		}
+
+		Series = series
+	}
+
+	return Episode{Season: Season, Series: Series}, nil
+}
 
 func GetRating(a *goquery.Selection) Rating {
 	rates := a.Find("div.th-desc > div.th-rates")
@@ -49,15 +86,18 @@ func GetItem(i int, s *goquery.Selection) {
 	a := s.Find("a.th-in.with-mask")
 	href, _ := a.Attr("href")
 	title := a.Find("div.th-desc > div.th-title").Text()
-	episode := a.Find("div.th-series").Text()
 	img, _ := a.Find("div.th-img > img").Attr("src")
 
 	item := ItemParse{
-		Title:   strings.TrimSpace(title),
-		Href:    href,
-		Img:     img,
-		Episode: strings.TrimSpace(episode),
-		Rating:  GetRating(a),
+		Title:  strings.TrimSpace(title),
+		Href:   href,
+		Img:    img,
+		Rating: GetRating(a),
+	}
+
+	episode, err := GetEpisode(a)
+	if err == nil {
+		item.Episode = episode
 	}
 
 	Items = append(Items, item)
@@ -105,7 +145,7 @@ func main() {
 	Url := "https://lordserial.run/zarubezhnye-serialy/"
 	UrlPage := Url
 	f := "./json/item.json"
-	for v := range 1 {
+	for v := range 55 {
 		if v > 0 {
 			UrlPage = fmt.Sprintf("%spage/%d/", Url, v+1)
 		}
